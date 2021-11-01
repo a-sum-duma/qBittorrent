@@ -47,6 +47,7 @@ public:
     void keyPressEvent(QKeyEvent *event) override;
 
     void renameSelectedFile(BitTorrent::AbstractFileStorage &fileStorage);
+    void setupDownloadPriorityMenu(QMenu *menu, bool createSubMenu);
 
 private:
     QModelIndex currentNameCell();

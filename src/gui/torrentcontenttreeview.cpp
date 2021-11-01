@@ -173,23 +173,19 @@ void TorrentContentTreeView::setupDownloadPriorityMenu(QMenu *menu, bool createS
         // many "download priority" are available to be assigned
 
         const qsizetype priorityGroups = 3;
-        const auto priorityGroupSize = std::max<qsizetype>(selectedRows.length() / priorityGroups, 1);
+        const qsizetype rowCount = selectedRows.count();
+        const qsizetype maxPrioGroupSize = std::max<qsizetype>(rowCount / priorityGroups, 1);
+        const qsizetype highPrioGroupSize = std::max<qsizetype>((rowCount - maxPrioGroupSize) / (priorityGroups - 1), 1);
 
-        model->changeFilePriorities(selectedRows, [priorityGroupSize, i = qsizetype(0)]() mutable
+        model->changeFilePriorities(selectedRows, [maxPrioGroupSize, highPrioGroupSize, i = qsizetype(0)]() mutable
         {
-            qsizetype group = i / priorityGroupSize;
             ++i;
-
-            switch (group)
-            {
-            case 0:
+            if (i <= maxPrioGroupSize)
                 return BitTorrent::DownloadPriority::Maximum;
-            case 1:
+            else if (i <= maxPrioGroupSize + highPrioGroupSize)
                 return BitTorrent::DownloadPriority::High;
-            default:
-            case 2:
+            else
                 return BitTorrent::DownloadPriority::Normal;
-            }
         });
     };
 

@@ -69,6 +69,21 @@ QModelIndex TorrentContentFilterModel::parent(const QModelIndex &child) const
     return mapFromSource(sourceParent);
 }
 
+QModelIndexList TorrentContentFilterModel::mapToSource(const QModelIndexList &proxyIndexes) const
+{
+    QModelIndexList sourceIndexes;
+    for (const QModelIndex &proxyIndex : proxyIndexes)
+    {
+        sourceIndexes.append(mapToSource(proxyIndex));
+    }
+    return sourceIndexes;
+}
+
+void TorrentContentFilterModel::changeFilePriorities(const QModelIndexList &indexes, const std::function<BitTorrent::DownloadPriority()> &priorityGenerator)
+{
+    model()->changeFilePriorities(mapToSource(indexes), priorityGenerator);
+}
+
 bool TorrentContentFilterModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     if (m_model->itemType(m_model->index(sourceRow, 0, sourceParent)) == TorrentContentModelItem::FolderType)

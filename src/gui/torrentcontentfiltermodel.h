@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QSortFilterProxyModel>
 
 #include "base/utils/compare.h"
@@ -46,6 +48,9 @@ public:
     TorrentContentModelItem::ItemType itemType(const QModelIndex &index) const;
     int getFileIndex(const QModelIndex &index) const;
     QModelIndex parent(const QModelIndex &child) const override;
+    using QSortFilterProxyModel::mapToSource;
+    QModelIndexList mapToSource(const QModelIndexList &proxyIndexes) const;
+    void changeFilePriorities(const QModelIndexList &indexes, const std::function<BitTorrent::DownloadPriority()> &priorityGenerator);
 
 public slots:
     void selectAll();

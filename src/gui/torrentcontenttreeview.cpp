@@ -155,17 +155,13 @@ void TorrentContentTreeView::setupDownloadPriorityMenu(QMenu *menu, bool createS
     auto model = qobject_cast<TorrentContentFilterModel *>(TorrentContentTreeView::model());
     Q_ASSERT(model);
 
-    const auto getSelectedRows = [this]() { return selectionModel()->selectedRows(TorrentContentModelItem::COL_PRIO); };
+    const auto getSelectedRows = [this]() { return selectionModel()->selectedRows(); };
 
     const auto applyPriorities = [&](BitTorrent::DownloadPriority priority)
     {
         return [model, getSelectedRows, priority]()
         {
-            for (const QModelIndex &index : asConst(getSelectedRows()))
-            {
-                model->setData(index, static_cast<int>(priority));
-            }
-            emit model->filteredFilesChanged();
+            model->changeFilePriorities(getSelectedRows(), [priority]() { return priority; });
         };
     };
     const auto applyPrioritiesByOrder = [model, getSelectedRows]()
@@ -179,27 +175,22 @@ void TorrentContentTreeView::setupDownloadPriorityMenu(QMenu *menu, bool createS
         const qsizetype priorityGroups = 3;
         const auto priorityGroupSize = std::max<qsizetype>(selectedRows.length() / priorityGroups, 1);
 
-        for (qsizetype i = 0; i < selectedRows.length(); ++i)
+        model->changeFilePriorities(selectedRows, [priorityGroupSize, i = qsizetype(0)]() mutable
         {
-            auto priority = BitTorrent::DownloadPriority::Ignored;
-            switch (i / priorityGroupSize)
+            qsizetype group = i / priorityGroupSize;
+            ++i;
+
+            switch (group)
             {
             case 0:
-                priority = BitTorrent::DownloadPriority::Maximum;
-                break;
+                return BitTorrent::DownloadPriority::Maximum;
             case 1:
-                priority = BitTorrent::DownloadPriority::High;
-                break;
+                return BitTorrent::DownloadPriority::High;
             default:
             case 2:
-                priority = BitTorrent::DownloadPriority::Normal;
-                break;
+                return BitTorrent::DownloadPriority::Normal;
             }
-
-            model->setData(selectedRows[i], static_cast<int>(priority));
-        }
-
-        emit model->filteredFilesChanged();
+        });
     };
 
     if (createSubMenu)

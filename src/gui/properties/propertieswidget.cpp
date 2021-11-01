@@ -643,9 +643,7 @@ void PropertiesWidget::displayFilesListMenu(const QPoint &)
             , this, [this]() { m_ui->filesList->renameSelectedFile(*m_torrent); });
         menu->addSeparator();
     }
-
-    if (!m_torrent->isSeed())
-        m_ui->filesList->setupDownloadPriorityMenu(menu, isSingleItemSelected);
+    m_ui->filesList->setupDownloadPriorityMenu(menu, isSingleItemSelected);
 
     // The selected torrent might have disappeared during exec()
     // so we just close menu when an appropriate model is reset

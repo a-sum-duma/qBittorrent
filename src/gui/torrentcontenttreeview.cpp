@@ -166,18 +166,29 @@ void TorrentContentTreeView::setupDownloadPriorityMenu(QMenu *menu, bool createS
     };
     const auto applyPrioritiesByOrder = [model, getSelectedRows]()
     {
-        const QModelIndexList selectedRows = getSelectedRows();
+        // If a signle folder is selected then distribute priorities over sub-items.
+        // Otherwise distribute priorities over all selected items.
+        QModelIndexList rows = getSelectedRows();
+        if (rows.length() == 1 && model->itemType(rows[0]) == TorrentContentModelItem::FolderType)
+        {
+            const QModelIndex parent = rows[0];
+            const qsizetype rowCount = model->rowCount(parent);
+            if (rowCount == 0)
+                rows = {};
+            else
+                rows = QItemSelectionRange(model->index(0, 0, parent), model->index(rowCount - 1, 0, parent)).indexes();
+        }
 
-        // Equally distribute the selected items into groups and for each group assign
-        // a download priority that will apply to each item. The number of groups depends on how
+        // Equally distribute items into groups and for each group assign a download
+        // priority that will apply to each item. The number of groups depends on how
         // many "download priority" are available to be assigned
 
         const qsizetype priorityGroups = 3;
-        const qsizetype rowCount = selectedRows.count();
+        const qsizetype rowCount = rows.count();
         const qsizetype maxPrioGroupSize = std::max<qsizetype>(rowCount / priorityGroups, 1);
         const qsizetype highPrioGroupSize = std::max<qsizetype>((rowCount - maxPrioGroupSize) / (priorityGroups - 1), 1);
 
-        model->changeFilePriorities(selectedRows, [maxPrioGroupSize, highPrioGroupSize, i = qsizetype(0)]() mutable
+        model->changeFilePriorities(rows, [maxPrioGroupSize, highPrioGroupSize, i = qsizetype(0)]() mutable
         {
             ++i;
             if (i <= maxPrioGroupSize)

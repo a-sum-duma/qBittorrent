@@ -259,6 +259,24 @@ QVector<BitTorrent::DownloadPriority> TorrentContentModel::getFilePriorities() c
     return prio;
 }
 
+void TorrentContentModel::changeFilePriorities(const QModelIndexList &indexes, const std::function<BitTorrent::DownloadPriority()> &priorityGenerator)
+{
+    bool changed = false;
+    for (const QModelIndex &index : indexes)
+    {
+        BitTorrent::DownloadPriority priority = priorityGenerator();
+        if (!index.isValid()) continue;
+        auto *item = static_cast<TorrentContentModelItem*>(index.internalPointer());
+        if (item->priority() == priority) continue;
+        item->setPriority(priority);
+        changed = true;
+    }
+    if (!changed) return;
+
+    emit dataChanged(index(0, 0), index((rowCount() - 1), (columnCount() - 1)));
+    emit filteredFilesChanged();
+}
+
 bool TorrentContentModel::allFiltered() const
 {
     return std::all_of(m_filesIndex.cbegin(), m_filesIndex.cend(), [](const TorrentContentModelFile *fileItem)
@@ -305,18 +323,21 @@ bool TorrentContentModel::setData(const QModelIndex &index, const QVariant &valu
 
     if (role == Qt::EditRole)
     {
-        Q_ASSERT(index.isValid());
-        auto *item = static_cast<TorrentContentModelItem*>(index.internalPointer());
         switch (index.column())
         {
         case TorrentContentModelItem::COL_NAME:
-            item->setName(value.toString());
-            emit dataChanged(index, index);
-            return true;
+            {
+                auto *const item = static_cast<TorrentContentModelItem*>(index.internalPointer());
+                item->setName(value.toString());
+                emit dataChanged(index, index);
+                return true;
+            }
         case TorrentContentModelItem::COL_PRIO:
-            item->setPriority(static_cast<BitTorrent::DownloadPriority>(value.toInt()));
-            emit dataChanged(this->index(0, 0), this->index((rowCount() - 1), (columnCount() - 1)));
-            return true;
+            {
+                const auto priority = static_cast<BitTorrent::DownloadPriority>(value.toInt());
+                changeFilePriorities({index}, [priority]() -> BitTorrent::DownloadPriority { return priority; });
+                return true;
+            }
         default:
             return false;
         }

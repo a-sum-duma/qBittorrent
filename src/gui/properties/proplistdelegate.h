@@ -65,9 +65,6 @@ public slots:
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
     void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
-signals:
-    void filteredFilesChanged() const;
-
 private:
     PropertiesWidget *m_properties;
     ProgressBarPainter m_progressBarPainter;

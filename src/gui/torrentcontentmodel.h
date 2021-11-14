@@ -28,6 +28,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include <QAbstractItemModel>
 #include <QVector>
 
@@ -62,6 +64,7 @@ public:
     void updateFilesPriorities(const QVector<BitTorrent::DownloadPriority> &fprio);
     void updateFilesAvailability(const QVector<qreal> &fa);
     QVector<BitTorrent::DownloadPriority> getFilePriorities() const;
+    void changeFilePriorities(const QModelIndexList &indexes, const std::function<BitTorrent::DownloadPriority()> &priorityGenerator);
     bool allFiltered() const;
     int columnCount(const QModelIndex &parent = {}) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;

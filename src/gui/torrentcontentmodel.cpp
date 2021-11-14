@@ -297,9 +297,6 @@ bool TorrentContentModel::setData(const QModelIndex &index, const QVariant &valu
         if (item->priority() != prio)
         {
             item->setPriority(prio);
-            // Update folders progress in the tree
-            m_rootItem->recalculateProgress();
-            m_rootItem->recalculateAvailability();
             afterChangingFilePriorities();
         }
         return true;
@@ -558,6 +555,10 @@ void TorrentContentModel::selectNone()
 
 void TorrentContentModel::afterChangingFilePriorities()
 {
+    // Update folders progress in the tree
+    m_rootItem->recalculateProgress();
+    m_rootItem->recalculateAvailability();
+
     emit dataChanged(index(0, 0), index((rowCount() - 1), (columnCount() - 1)));
     emit filteredFilesChanged();
 }

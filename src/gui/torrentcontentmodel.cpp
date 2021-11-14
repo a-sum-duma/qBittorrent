@@ -273,6 +273,10 @@ void TorrentContentModel::changeFilePriorities(const QModelIndexList &indexes, c
     }
     if (!changed) return;
 
+    // Update folders progress in the tree
+    m_rootItem->recalculateProgress();
+    m_rootItem->recalculateAvailability();
+
     emit dataChanged(index(0, 0), index((rowCount() - 1), (columnCount() - 1)));
     emit filteredFilesChanged();
 }
@@ -309,15 +313,7 @@ bool TorrentContentModel::setData(const QModelIndex &index, const QVariant &valu
         else if (value.toInt() == Qt::Unchecked)
             prio = BitTorrent::DownloadPriority::Ignored;
 
-        if (item->priority() != prio)
-        {
-            item->setPriority(prio);
-            // Update folders progress in the tree
-            m_rootItem->recalculateProgress();
-            m_rootItem->recalculateAvailability();
-            emit dataChanged(this->index(0, 0), this->index((rowCount() - 1), (columnCount() - 1)));
-            emit filteredFilesChanged();
-        }
+        changeFilePriorities({index}, [prio]() -> BitTorrent::DownloadPriority { return prio; });
         return true;
     }
 

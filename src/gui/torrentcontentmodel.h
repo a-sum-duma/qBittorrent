@@ -29,6 +29,7 @@
 #pragma once
 
 #include <QAbstractItemModel>
+#include <QTimer>
 #include <QVector>
 
 #include "torrentcontentmodelitem.h"
@@ -87,4 +88,7 @@ private:
     TorrentContentModelFolder *m_rootItem;
     QVector<TorrentContentModelFile *> m_filesIndex;
     QFileIconProvider *m_fileIconProvider;
+    QTimer m_afterChangingFilePrioritiesTimer;
+
+    void afterChangingFilePriorities();
 };

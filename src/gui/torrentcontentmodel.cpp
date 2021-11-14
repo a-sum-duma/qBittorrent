@@ -200,6 +200,9 @@ TorrentContentModel::TorrentContentModel(QObject *parent)
     static bool doesBuiltInProviderWork = doesQFileIconProviderWork();
     m_fileIconProvider = doesBuiltInProviderWork ? new QFileIconProvider() : new MimeFileIconProvider();
 #endif
+
+    m_afterChangingFilePrioritiesTimer.setSingleShot(true);
+    connect(&m_afterChangingFilePrioritiesTimer, &QTimer::timeout, this, &TorrentContentModel::afterChangingFilePriorities);
 }
 
 TorrentContentModel::~TorrentContentModel()
@@ -297,8 +300,7 @@ bool TorrentContentModel::setData(const QModelIndex &index, const QVariant &valu
             // Update folders progress in the tree
             m_rootItem->recalculateProgress();
             m_rootItem->recalculateAvailability();
-            emit dataChanged(this->index(0, 0), this->index((rowCount() - 1), (columnCount() - 1)));
-            emit filteredFilesChanged();
+            afterChangingFilePriorities();
         }
         return true;
     }
@@ -314,9 +316,17 @@ bool TorrentContentModel::setData(const QModelIndex &index, const QVariant &valu
             emit dataChanged(index, index);
             return true;
         case TorrentContentModelItem::COL_PRIO:
-            item->setPriority(static_cast<BitTorrent::DownloadPriority>(value.toInt()));
-            emit dataChanged(this->index(0, 0), this->index((rowCount() - 1), (columnCount() - 1)));
-            return true;
+            {
+                const auto prio = static_cast<BitTorrent::DownloadPriority>(value.toInt());
+                if (item->priority() != prio)
+                {
+                    item->setPriority(prio);
+                    // Priorities may be changed for multiple files e.g. in a loop.
+                    // Perform post-processing but only once, after all priorities have been set.
+                    m_afterChangingFilePrioritiesTimer.start();
+                }
+                return true;
+            }
         default:
             return false;
         }
@@ -544,4 +554,10 @@ void TorrentContentModel::selectNone()
     for (int i = 0; i < m_rootItem->childCount(); ++i)
         m_rootItem->child(i)->setPriority(BitTorrent::DownloadPriority::Ignored);
     emit dataChanged(index(0, 0), index((rowCount() - 1), (columnCount() - 1)));
+}
+
+void TorrentContentModel::afterChangingFilePriorities()
+{
+    emit dataChanged(index(0, 0), index((rowCount() - 1), (columnCount() - 1)));
+    emit filteredFilesChanged();
 }
